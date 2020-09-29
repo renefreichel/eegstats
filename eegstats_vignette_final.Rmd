@@ -1,0 +1,97 @@
+---
+title: "The eegstats package: ERP and ERSP Analysis and Visualization"
+author: "René Freichel"
+date: "5/31/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Description
+
+This eegstats package allows the user to analyze and visualize event - related potentials (ERPs) and event - related spectral dynamics (ERSPs). 
+
+## Basic Usage
+
+EEG data is commonly pre-processed and analyzed in Matlab using widely known package, such as "EEGLAB" (Delorme & Makeig, 2004). This package is one of the first that implements EEG analyses in R. To use the eegstats functions, the package assumes the EEG data to be pre-processed. To illustrate the analyses, we could use the ERPdata - dataset from the package erp.easy. 
+```{r my_erpdata}
+my_erpdata <- erp.easy::ERPdata
+head(my_erpdata)
+
+```
+Typically EEG data is outputted in a long - format shape Subject ID x Condition x Time x Electrodes. 
+For ERSP analyses the data is typically in a shape: Subject ID x Condition x Time x Frequency x Electrode. To illustrate the use of the functions, we pretend the existing data file contains time frequency data so all electrodes actually represent frequencies for one electrode. 
+```{r my_erspdata}
+my_erspdata <- my_erpdata
+```
+
+## Loading the Package
+```{r }
+library('eegstats')
+```
+
+## Reading In the data
+Given this (typically) rather specific shape of EEG data, the function reading_data will check whether the input ERP data is in the correct format. Moreover, the function will add the name of the electrodes to the data.
+
+```{r reading_data}
+electrode_names <- c('FCz','FPz','Cz','Fz','Pz','Oz','FC1','FC2','FC3','FC4','FC5','FC6','C1','C2','C3','P1','P2','P3', 'O1', 'O2')
+
+my_erpdata <- reading_data(my_erpdata, electrode_names)
+head(my_erpdata)
+
+```
+
+## Individual ERP data
+Sometimes researchers are interested in single subject ERPs to visualize outliers or inspect single-subject trends. First, we compute the single - subject ERP.
+```{r ind_average_erp_data}
+ind_average_erp_data <- compute_ind_average_erp(my_erpdata, electrode = 'Cz', subject = 'S1')
+```
+
+We can then plot the single subject ERP.
+```{r ind_average_erp_plot}
+plot_ind_average_erp(my_erpdata,ind_average_erp_data)
+```
+
+## Grand Average ERP data
+However, most of the time we are interested in grand averages, so the averaged ERPs across subjects. We can compute it using the function "compute_grand_average_erp".
+```{r grand_average_erp}
+grand_average_erp_data <- compute_grand_average_erp(my_erpdata, electrode = 'Pz')
+head(grand_average_erp_data[,1:25])
+```
+
+Now, we want to plot the grand average ERP signal.
+
+```{r grand_average_erp_plot}
+plot_grand_average_erp(my_erpdata, grand_average_erp_data)
+```
+
+## ERSP: time frequency data 
+
+Besides event-related potentials, we are also interested in event-related spectral dynamics, so the power across frequencies and timepoints. We can use the following eegstats function to compute the grand average ERSP signal:
+```{r grand_average_ersp}
+grand_average_ersp_data <- compute_grand_average_ersp(my_erspdata)
+head(grand_average_ersp_data[,1:10,1:10])
+```
+
+As before, we want to plot the averaged ERSP signal.
+```{r grand_average_ersp_plot}
+plot_grand_average_ersp(my_erpdata, grand_average_ersp_data, n_cond = 1)
+```
+
+## Correlation ERP / ERSP
+Some domains in EEG research focus on the correlation between ERPs and ERSPs (see Yordanova et al., 2001). We can correlate the amplitude at one timepoint (ERP) with a a certain frequency (ERSP).
+
+```{r erp_ersp_cor}
+electrode = 'Cz'
+time_erp = 100
+frequency = 10 
+correlate_erp_ersp(my_erpdata, electrode, time_erp, my_erspdata, frequency)
+```
+
+## References
+Delorme, A., & Makeig, S. (2004). EEGLAB: an open source toolbox for analysis of single-trial EEG dynamics including independent component analysis. Journal of neuroscience methods, 134(1), 9-21.
+
+Yordanova, J., Kolev, V., & Polich, J. (2001). P300 and alpha event-related desynchronization (ERD). Psychophysiology, 38(1), 143-152.
+
